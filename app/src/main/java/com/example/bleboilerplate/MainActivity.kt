@@ -3,8 +3,6 @@ package com.example.bleboilerplate
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -12,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bleboilerplate.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -19,18 +18,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
-    private val scanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            super.onScanResult(callbackType, result)
-            val deviceName = result.device.name ?: getString(R.string.unknown_device)
-            binding.tvStatus.text = getString(R.string.scan_found_device, deviceName)
-        }
+    private val deviceMap = linkedMapOf<String, BleDeviceUiModel>()
+    private val deviceListAdapter = BleDeviceListAdapter()
 
-        override fun onScanFailed(errorCode: Int) {
-            super.onScanFailed(errorCode)
+    private val scanCallback = BleScanCallback(
+        onResult = { result ->
+            val device = result.device
+            val address = device.address ?: return@BleScanCallback
+            val deviceName = device.name ?: getString(R.string.unknown_device)
+
+            deviceMap[address] = BleDeviceUiModel(
+                address = address,
+                name = deviceName,
+                rssi = result.rssi
+            )
+            renderDeviceList()
+
+            binding.tvStatus.text = getString(R.string.scan_found_device_count, deviceMap.size)
+        },
+        onFailed = { errorCode ->
             binding.tvStatus.text = getString(R.string.scan_failed, errorCode)
         }
-    }
+    )
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -48,6 +57,11 @@ class MainActivity : AppCompatActivity() {
 
         val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
+
+        binding.rvDevices.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = deviceListAdapter
+        }
 
         binding.tvTitle.text = getString(R.string.app_name)
         binding.tvDescription.text = getString(R.string.main_description)
@@ -89,12 +103,21 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        deviceMap.clear()
+        renderDeviceList()
+
         bluetoothAdapter.bluetoothLeScanner?.startScan(scanCallback)
         binding.tvStatus.text = getString(R.string.scan_started)
     }
 
     private fun stopBleScan() {
         bluetoothAdapter.bluetoothLeScanner?.stopScan(scanCallback)
+    }
+
+    private fun renderDeviceList() {
+        val sortedList = deviceMap.values
+            .sortedByDescending { it.rssi }
+        deviceListAdapter.submitList(sortedList)
     }
 
     private fun requiredPermissions(): List<String> {
