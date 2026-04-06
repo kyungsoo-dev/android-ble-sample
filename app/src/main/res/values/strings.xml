@@ -1,13 +1,14 @@
 <resources>
     <string name="app_name">BLE Boilerplate</string>
-    <string name="main_description">BLE 스캔 기능을 바로 붙여서 개발할 수 있는 안드로이드 보일러플레이트입니다.</string>
+    <string name="main_description">안드로이드 기본 BLE API로 주변 기기를 스캔하고 목록으로 표시합니다.</string>
     <string name="action_start_scan">BLE 스캔 시작</string>
     <string name="ready_to_scan">준비 완료: 버튼을 눌러 스캔을 시작하세요.</string>
     <string name="scan_started">스캔을 시작했습니다.</string>
     <string name="scan_failed">스캔 실패 (코드: %1$d)</string>
-    <string name="scan_found_device">디바이스 발견: %1$s</string>
+    <string name="scan_found_device_count">디바이스 발견: %1$d개</string>
     <string name="permission_required">권한이 필요합니다. 권한 승인 후 다시 시도해주세요.</string>
     <string name="ble_not_supported">이 기기는 BLE를 지원하지 않습니다.</string>
     <string name="bluetooth_disabled">블루투스가 꺼져 있습니다.</string>
     <string name="unknown_device">이름 없는 디바이스</string>
+    <string name="device_rssi">신호 세기(RSSI): %1$d dBm</string>
 </resources>

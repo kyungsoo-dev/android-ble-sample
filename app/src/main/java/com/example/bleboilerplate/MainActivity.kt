@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bleboilerplate.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -19,11 +20,24 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
+    private val deviceMap = linkedMapOf<String, BleDeviceUiModel>()
+    private val deviceListAdapter = BleDeviceListAdapter()
+
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            val deviceName = result.device.name ?: getString(R.string.unknown_device)
-            binding.tvStatus.text = getString(R.string.scan_found_device, deviceName)
+            val device = result.device
+            val address = device.address ?: return
+            val deviceName = device.name ?: getString(R.string.unknown_device)
+
+            deviceMap[address] = BleDeviceUiModel(
+                address = address,
+                name = deviceName,
+                rssi = result.rssi
+            )
+            renderDeviceList()
+
+            binding.tvStatus.text = getString(R.string.scan_found_device_count, deviceMap.size)
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -48,6 +62,11 @@ class MainActivity : AppCompatActivity() {
 
         val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
+
+        binding.rvDevices.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = deviceListAdapter
+        }
 
         binding.tvTitle.text = getString(R.string.app_name)
         binding.tvDescription.text = getString(R.string.main_description)
@@ -89,12 +108,21 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        deviceMap.clear()
+        renderDeviceList()
+
         bluetoothAdapter.bluetoothLeScanner?.startScan(scanCallback)
         binding.tvStatus.text = getString(R.string.scan_started)
     }
 
     private fun stopBleScan() {
         bluetoothAdapter.bluetoothLeScanner?.stopScan(scanCallback)
+    }
+
+    private fun renderDeviceList() {
+        val sortedList = deviceMap.values
+            .sortedByDescending { it.rssi }
+        deviceListAdapter.submitList(sortedList)
     }
 
     private fun requiredPermissions(): List<String> {
