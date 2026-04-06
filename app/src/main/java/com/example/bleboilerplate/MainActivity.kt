@@ -3,8 +3,6 @@ package com.example.bleboilerplate
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -23,11 +21,10 @@ class MainActivity : AppCompatActivity() {
     private val deviceMap = linkedMapOf<String, BleDeviceUiModel>()
     private val deviceListAdapter = BleDeviceListAdapter()
 
-    private val scanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            super.onScanResult(callbackType, result)
+    private val scanCallback = BleScanCallback(
+        onResult = { result ->
             val device = result.device
-            val address = device.address ?: return
+            val address = device.address ?: return@BleScanCallback
             val deviceName = device.name ?: getString(R.string.unknown_device)
 
             deviceMap[address] = BleDeviceUiModel(
@@ -38,13 +35,11 @@ class MainActivity : AppCompatActivity() {
             renderDeviceList()
 
             binding.tvStatus.text = getString(R.string.scan_found_device_count, deviceMap.size)
-        }
-
-        override fun onScanFailed(errorCode: Int) {
-            super.onScanFailed(errorCode)
+        },
+        onFailed = { errorCode ->
             binding.tvStatus.text = getString(R.string.scan_failed, errorCode)
         }
-    }
+    )
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
