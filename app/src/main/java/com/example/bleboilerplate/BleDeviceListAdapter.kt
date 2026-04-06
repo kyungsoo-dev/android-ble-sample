@@ -4,33 +4,18 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
 import com.example.bleboilerplate.databinding.ItemBleDeviceBinding
 
-data class BleDeviceUiModel(
-    val address: String,
-    val name: String,
-    val rssi: Int
-)
+class BleDeviceListAdapter : ListAdapter<BleDeviceUiModel, BleDeviceViewHolder>(DiffCallback) {
 
-class BleDeviceListAdapter : ListAdapter<BleDeviceUiModel, BleDeviceListAdapter.DeviceViewHolder>(DiffCallback) {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DeviceViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BleDeviceViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val binding = ItemBleDeviceBinding.inflate(inflater, parent, false)
-        return DeviceViewHolder(binding)
+        return BleDeviceViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: DeviceViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: BleDeviceViewHolder, position: Int) {
         holder.bind(getItem(position))
-    }
-
-    class DeviceViewHolder(private val binding: ItemBleDeviceBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: BleDeviceUiModel) {
-            binding.tvDeviceName.text = item.name
-            binding.tvDeviceAddress.text = item.address
-            binding.tvDeviceRssi.text = binding.root.context.getString(R.string.device_rssi, item.rssi)
-        }
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<BleDeviceUiModel>() {
